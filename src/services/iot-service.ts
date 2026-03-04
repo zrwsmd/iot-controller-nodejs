@@ -75,7 +75,7 @@ class IoTService {
       properties.forEach((prop: any) => {
         propertyMap[prop.identifier] = {
           value: prop.value,
-          time: new Date(prop.time).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+          time: new Date(Number(prop.time)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
         };
       });
 
