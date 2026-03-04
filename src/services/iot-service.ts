@@ -1,14 +1,27 @@
-const Iot20180120 = require('@alicloud/iot20180120').default;
-const { 
+import Iot20180120 from '@alicloud/iot20180120';
+import { 
   SetDevicePropertyRequest,
   QueryDevicePropertyStatusRequest,
   InvokeThingServiceRequest,
   QueryDeviceDetailRequest
-} = require('@alicloud/iot20180120');
-const OpenApi = require('@alicloud/openapi-client');
-const config = require('../config/iot-config');
+} from '@alicloud/iot20180120';
+import * as OpenApi from '@alicloud/openapi-client';
+import config from '../config/iot-config';
+import {
+  SetPropertyResult,
+  QueryPropertyResult,
+  InvokeServiceResult,
+  DeviceDetailResult,
+  DeviceStatusResult,
+  PropertyMap
+} from '../types/iot.types';
 
 class IoTService {
+  private client: Iot20180120;
+  private iotInstanceId: string;
+  private productKey: string;
+  private deviceName: string;
+
   constructor() {
     const openApiConfig = new OpenApi.Config({
       accessKeyId: config.accessKeyId,
@@ -25,11 +38,7 @@ class IoTService {
     console.log(`[IoTService] 设备: ${this.productKey}/${this.deviceName}`);
   }
 
-  /**
-   * 1. 设置设备属性
-   * @param {Object} properties - 例如 { ADASSwitch: 1 }
-   */
-  async setProperty(properties) {
+  async setProperty(properties: Record<string, any>): Promise<SetPropertyResult> {
     try {
       console.log('[IoTService] 设置属性:', properties);
       const request = new SetDevicePropertyRequest({
@@ -40,20 +49,18 @@ class IoTService {
       });
       const response = await this.client.setDeviceProperty(request);
       return {
-        success: response.body.success,
+        success: response.body.success ?? false,
         messageId: response.body.data?.messageId,
         errorMessage: response.body.errorMessage
       };
     } catch (error) {
-      console.error('[IoTService] 设置属性失败:', error.message);
+      const err = error as Error;
+      console.error('[IoTService] 设置属性失败:', err.message);
       throw error;
     }
   }
 
-  /**
-   * 2. 查询设备属性
-   */
-  async queryProperty() {
+  async queryProperty(): Promise<QueryPropertyResult> {
     try {
       console.log('[IoTService] 查询设备属性');
       const request = new QueryDevicePropertyStatusRequest({
@@ -64,8 +71,8 @@ class IoTService {
       const response = await this.client.queryDevicePropertyStatus(request);
       const properties = response.body.data?.list?.propertyStatusInfo || [];
 
-      const propertyMap = {};
-      properties.forEach(prop => {
+      const propertyMap: PropertyMap = {};
+      properties.forEach((prop: any) => {
         propertyMap[prop.identifier] = {
           value: prop.value,
           time: new Date(prop.time).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
@@ -74,17 +81,13 @@ class IoTService {
 
       return { success: true, properties: propertyMap, count: properties.length };
     } catch (error) {
-      console.error('[IoTService] 查询属性失败:', error.message);
+      const err = error as Error;
+      console.error('[IoTService] 查询属性失败:', err.message);
       throw error;
     }
   }
 
-  /**
-   * 3. 调用设备服务
-   * @param {String} serviceId - 例如 'restart'
-   * @param {Object} args
-   */
-  async invokeService(serviceId, args = {}) {
+  async invokeService(serviceId: string, args: Record<string, any> = {}): Promise<InvokeServiceResult> {
     try {
       console.log(`[IoTService] 调用服务: ${serviceId}`, args);
       const request = new InvokeThingServiceRequest({
@@ -96,20 +99,18 @@ class IoTService {
       });
       const response = await this.client.invokeThingService(request);
       return {
-        success: response.body.success,
+        success: response.body.success ?? false,
         messageId: response.body.data?.messageId,
         errorMessage: response.body.errorMessage
       };
     } catch (error) {
-      console.error('[IoTService] 调用服务失败:', error.message);
+      const err = error as Error;
+      console.error('[IoTService] 调用服务失败:', err.message);
       throw error;
     }
   }
 
-  /**
-   * 4. 查询设备详情
-   */
-  async queryDeviceDetail() {
+  async queryDeviceDetail(): Promise<DeviceDetailResult> {
     try {
       console.log('[IoTService] 查询设备详情');
       const request = new QueryDeviceDetailRequest({
@@ -119,30 +120,31 @@ class IoTService {
       });
       const response = await this.client.queryDeviceDetail(request);
       const deviceInfo = response.body.data;
+      if (!deviceInfo) {
+        throw new Error('设备信息为空');
+      }
       return {
         success: true,
-        deviceName: deviceInfo.deviceName,
-        productKey: deviceInfo.productKey,
-        deviceSecret: deviceInfo.deviceSecret?.substring(0, 8) + '****',
-        status: deviceInfo.status,
-        online: deviceInfo.online,
-        gmtCreate: new Date(deviceInfo.gmtCreate).toLocaleString('zh-CN'),
-        gmtActive: new Date(deviceInfo.gmtActive).toLocaleString('zh-CN'),
+        deviceName: deviceInfo.deviceName ?? '',
+        productKey: deviceInfo.productKey ?? '',
+        deviceSecret: (deviceInfo.deviceSecret?.substring(0, 8) ?? '') + '****',
+        status: deviceInfo.status ?? '',
+        online: deviceInfo.online ?? false,
+        gmtCreate: deviceInfo.gmtCreate ? new Date(deviceInfo.gmtCreate).toLocaleString('zh-CN') : '',
+        gmtActive: deviceInfo.gmtActive ? new Date(deviceInfo.gmtActive).toLocaleString('zh-CN') : '',
         gmtOnline: deviceInfo.gmtOnline
           ? new Date(deviceInfo.gmtOnline).toLocaleString('zh-CN')
           : 'N/A',
         ipAddress: deviceInfo.ipAddress || 'N/A'
       };
     } catch (error) {
-      console.error('[IoTService] 查询设备详情失败:', error.message);
+      const err = error as Error;
+      console.error('[IoTService] 查询设备详情失败:', err.message);
       throw error;
     }
   }
 
-  /**
-   * 5. 获取设备状态（综合信息）
-   */
-  async getDeviceStatus() {
+  async getDeviceStatus(): Promise<DeviceStatusResult> {
     try {
       console.log('[IoTService] 获取设备状态');
       const [detail, property] = await Promise.all([
@@ -158,10 +160,11 @@ class IoTService {
         ipAddress: detail.ipAddress
       };
     } catch (error) {
-      console.error('[IoTService] 获取设备状态失败:', error.message);
+      const err = error as Error;
+      console.error('[IoTService] 获取设备状态失败:', err.message);
       throw error;
     }
   }
 }
 
-module.exports = IoTService;
+export default IoTService;

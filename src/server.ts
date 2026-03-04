@@ -1,24 +1,23 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const config = require('./config/iot-config');
-const deviceRoutes = require('./routes/device-routes');
+import dotenv from 'dotenv';
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import config from './config/iot-config';
+import deviceRoutes from './routes/device-routes';
+
+dotenv.config();
 
 const app = express();
 
-// 中间件
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 请求日志
-app.use((req, res, next) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`[${new Date().toLocaleString('zh-CN')}] ${req.method} ${req.path}`);
   next();
 });
 
-// 根路径
-app.get('/', (req, res) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({
     name: 'IoT Controller API',
     version: '1.0.0',
@@ -35,21 +34,17 @@ app.get('/', (req, res) => {
   });
 });
 
-// 健康检查
-app.get('/health', (req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
 
-// 设备 API
 app.use('/api/device', deviceRoutes);
 
-// 404
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
 });
 
-// 错误处理
-app.use((err, req, res, next) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[Error]', err.message);
   res.status(500).json({
     success: false,
@@ -69,4 +64,4 @@ app.listen(PORT, () => {
   console.log('========================================\n');
 });
 
-module.exports = app;
+export default app;
