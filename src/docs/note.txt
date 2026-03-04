@@ -1,0 +1,15 @@
+调用API错误信息显示 ReadTimeout(3000) 超时，这是因为 RAM 用户权限不足导致的
+给 RAM 用户添加 IoT 权限（推荐）
+登录阿里云控制台：
+
+进入 RAM 控制台
+访问：https://ram.console.aliyun.com/users
+找到你的 RAM 用户
+点击用户名进入详情
+添加权限
+点击"权限管理" → "添加权限"
+选择以下权限策略：
+必需权限（选择一个）
+方式一：使用系统策略（推荐）
+
+AliyunIOTFullAccess  （IoT 完全访问权限）
