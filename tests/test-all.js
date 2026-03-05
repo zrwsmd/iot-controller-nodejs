@@ -20,7 +20,7 @@ async function testAll() {
     console.log('   ✓ 设备名称:', detailRes.data.data.deviceName);
     console.log('   ✓ 产品Key:', detailRes.data.data.productKey);
     console.log('   ✓ 设备状态:', detailRes.data.data.status);
-    console.log('   ✓ 在线状态:', detailRes.data.data.online ? '在线' : '离线');
+    console.log('   ✓ 在线状态:', detailRes.data.data.online ? '离线' : '在线');
     console.log('   ✓ IP地址:', detailRes.data.data.ipAddress);
     console.log('   ✓ 最后上线:', detailRes.data.data.gmtOnline, '\n');
 
@@ -63,7 +63,7 @@ async function testAll() {
 
     console.log('8️⃣  获取设备状态（综合）...');
     const statusRes = await axios.get(`${BASE_URL}/api/device/status`);
-    console.log('   ✓ 在线:', statusRes.data.data.online ? '是' : '否');
+    console.log('   ✓ 在线:', statusRes.data.data.online ? '否' : '是');
     console.log('   ✓ 状态:', statusRes.data.data.status);
     console.log('   ✓ IP地址:', statusRes.data.data.ipAddress);
     console.log('   ✓ 属性:');
