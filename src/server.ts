@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import config from './config/iot-config';
 import deviceRoutes from './routes/device-routes';
+import connectionRoutes from './routes/connection-routes';
 
 dotenv.config();
 
@@ -23,13 +24,22 @@ app.get('/', (_req: Request, res: Response) => {
     version: '1.0.0',
     device: { productKey: config.productKey, deviceName: config.deviceName },
     endpoints: {
-      setADASSwitch:  'POST /api/device/adas-switch',
-      setProperty:    'POST /api/device/property',
-      queryProperty:  'GET  /api/device/property',
-      restart:        'POST /api/device/restart',
-      invokeService:  'POST /api/device/service/:serviceId',
-      queryDetail:    'GET  /api/device/detail',
-      getStatus:      'GET  /api/device/status'
+      device: {
+        setADASSwitch:  'POST /api/device/adas-switch',
+        setProperty:    'POST /api/device/property',
+        queryProperty:  'GET  /api/device/property',
+        restart:        'POST /api/device/restart',
+        invokeService:  'POST /api/device/service/:serviceId',
+        queryDetail:    'GET  /api/device/detail',
+        getStatus:      'GET  /api/device/status'
+      },
+      connection: {
+        status:          'GET  /api/connection/status',
+        connect:         'POST /api/connection/connect',
+        disconnect:      'POST /api/connection/disconnect',
+        forceDisconnect: 'POST /api/connection/force-disconnect',
+        heartbeat:       'POST /api/connection/heartbeat'
+      }
     }
   });
 });
@@ -39,6 +49,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/device', deviceRoutes);
+app.use('/api/connection', connectionRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
