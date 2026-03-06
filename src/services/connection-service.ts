@@ -15,7 +15,8 @@ class ConnectionService {
     try {
       const result = await this.iotService.queryProperty();
       const connectedValue = result.properties.hasIDEConnected?.value;
-      const connected = String(connectedValue) === 'true' || connectedValue === 1;
+      console.log('[ConnectionService] hasIDEConnected 原始值:', connectedValue, '类型:', typeof connectedValue);
+      const connected = String(connectedValue) === 'true' || connectedValue === 1 || String(connectedValue) === '1';
       
       if (connected && result.properties.IDEInfo) {
         const ideInfoData = result.properties.IDEInfo.value;
