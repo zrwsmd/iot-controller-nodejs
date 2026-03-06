@@ -14,6 +14,7 @@
     "test:service": "ts-node tests/test-service.ts",
     "test:connection": "ts-node tests/test-connection.ts",
     "example:client": "ts-node examples/ide-client-example.ts",
+    "example:deploy": "ts-node examples/deploy-example.ts",
     "clean": "rimraf dist"
   },
   "keywords": [
@@ -26,6 +27,9 @@
   "dependencies": {
     "@alicloud/iot20180120": "^3.0.8",
     "@alicloud/openapi-client": "^0.4.0",
+    "@types/archiver": "^7.0.0",
+    "ali-oss": "^6.23.0",
+    "archiver": "^7.0.1",
     "axios": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",

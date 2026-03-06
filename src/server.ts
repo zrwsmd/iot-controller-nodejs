@@ -4,6 +4,7 @@ import cors from 'cors';
 import config from './config/iot-config';
 import deviceRoutes from './routes/device-routes';
 import connectionRoutes from './routes/connection-routes';
+import deployRoutes from './routes/deploy-routes';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.use('/api/device', deviceRoutes);
 app.use('/api/connection', connectionRoutes);
+app.use('/api/deploy', deployRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ success: false, message: '接口不存在', path: req.path });
