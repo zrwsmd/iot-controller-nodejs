@@ -30,3 +30,5 @@ npm test
 | POST | /api/device/service/:serviceId | 调用服务（通用） |
 | GET  | /api/device/detail | 查询设备详情 |
 | GET  | /api/device/status | 获取设备状态 |
+
+作为控制端(IDE)使用
