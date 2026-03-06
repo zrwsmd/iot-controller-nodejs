@@ -4,7 +4,7 @@ import axios from 'axios';
 dotenv.config();
 
 const BASE_URL = 'http://localhost:3000';
-const CLIENT_ID = `ide-client-${Date.now()}`;
+const CLIENT_ID = `ide-client-12345678`;
 const HEARTBEAT_INTERVAL = 30000; // 30 秒
 
 /**
