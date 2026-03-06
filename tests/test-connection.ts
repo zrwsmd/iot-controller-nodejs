@@ -37,7 +37,7 @@ async function testConnection(): Promise<void> {
     console.log('3️⃣  查询连接状态（应该已连接）...');
     const statusRes2 = await axios.get(`${BASE_URL}/api/connection/status`);
     console.log('   已连接:', statusRes2.data.data.connected);
-    console.log('   控制端信息:', statusRes2.data.data.controller);
+    console.log('   IDE信息:', statusRes2.data.data.ideInfo);
     console.log();
 
     // 4. 尝试第二个客户端连接（应该失败）
