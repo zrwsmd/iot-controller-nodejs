@@ -13,6 +13,7 @@
     "test:property": "ts-node tests/test-property.ts",
     "test:service": "ts-node tests/test-service.ts",
     "test:connection": "ts-node tests/test-connection.ts",
+    "example:client": "ts-node examples/ide-client-example.ts",
     "clean": "rimraf dist"
   },
   "keywords": [
