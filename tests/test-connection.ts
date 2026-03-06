@@ -4,7 +4,7 @@ import axios from 'axios';
 dotenv.config();
 
 const BASE_URL = 'http://localhost:3000';
-const CLIENT_ID = `ide-client-${Date.now()}`;
+const CLIENT_ID = `ide-client-12345678`;
 
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
