@@ -47,12 +47,12 @@ async function testAll() {
     const adasValue = propertyRes2.data.data.properties.ADASSwitch?.value;
     console.log('   ✓ ADASSwitch 当前值:', adasValue, `(${adasValue === '1' ? '开' : '关'})\n`);
 
-    console.log('6️⃣  设置 ADASSwitch = 0（关）...');
-    const setOffRes = await axios.post(`${BASE_URL}/api/device/adas-switch`, { value: 0 });
-    console.log('   ✓ 设置结果:', setOffRes.data.success);
-    console.log('   ✓ 状态:', setOffRes.data.data.description, '\n');
+    // console.log('6️⃣  设置 ADASSwitch = 0（关）...');
+    // const setOffRes = await axios.post(`${BASE_URL}/api/device/adas-switch`, { value: 0 });
+    // console.log('   ✓ 设置结果:', setOffRes.data.success);
+    // console.log('   ✓ 状态:', setOffRes.data.data.description, '\n');
 
-    console.log('   ⏳ 等待 3 秒...\n');
+    // console.log('   ⏳ 等待 3 秒...\n');
     await sleep(3000);
 
     console.log('7️⃣  调用 restart 服务...');
