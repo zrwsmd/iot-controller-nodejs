@@ -21,7 +21,7 @@ async function main() {
       projectPath: path.join(__dirname, '..'),  // 当前项目路径
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
-      deployCommand: 'npm install && npm run build'  // 部署命令
+      deployCommand: 'npm install && npm run build && nohup npm run dev > app.log 2>&1 &'  // 部署命令
     };
 
     console.log('部署参数:');
@@ -33,7 +33,7 @@ async function main() {
 
     // 测试模式：使用固定的 OSS 下载地址，避免每次上传产生费用
     const USE_FIXED_URL = true;
-    const FIXED_DOWNLOAD_URL = 'http://iot-deploy-bucket.oss-cn-hangzhou.aliyuncs.com/projects/iot-controller-nodejs/iot-controller-nodejs-1773021413017.zip?OSSAccessKeyId=LTAI5tNzcjJxpnyVfHAmPifK&Expires=1773025014&Signature=E5n6AGNWxYXISCuptJbvtxM%2Bjo0%3D';
+    const FIXED_DOWNLOAD_URL = 'http://iot-deploy-bucket.oss-cn-hangzhou.aliyuncs.com/projects/iot-controller-nodejs/iot-controller-nodejs-1773023709680.zip?OSSAccessKeyId=LTAI5tNzcjJxpnyVfHAmPifK&Expires=1773027311&Signature=QSRT5LwV%2Fw5J%2FiIqrbx59zJjoiI%3D';
 
     if (USE_FIXED_URL) {
       // 测试模式：直接使用固定的下载地址，跳过打包和上传
@@ -69,7 +69,8 @@ async function main() {
         console.log(result.deployLog);
         console.log('----------------------------------------');
       }
-    } else {
+    } 
+    else {
       // 执行部署
       const result = await deployService.deployFullWorkflow(deployParams);
 
