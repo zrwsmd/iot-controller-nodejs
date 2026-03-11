@@ -21,7 +21,8 @@ async function main() {
       projectPath: path.join(__dirname, '..'),  // 当前项目路径
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
-      deployCommand: 'npm install && npm run build'  // 部署命令
+      deployCommand: 'npm install && npm run build',  // 部署命令（同步执行）
+      startCommand: 'pm2 start npm --name iot-app -- run dev'  // 启动命令（后台执行）
     };
 
     console.log('部署参数:');
@@ -29,6 +30,7 @@ async function main() {
     console.log('  项目名称:', deployParams.projectName);
     console.log('  部署路径:', deployParams.deployPath);
     console.log('  部署命令:', deployParams.deployCommand);
+    console.log('  启动命令:', deployParams.startCommand);
     console.log();
 
     // 测试模式：使用固定的 OSS 下载地址，避免每次上传产生费用
@@ -50,7 +52,8 @@ async function main() {
         projectName: deployParams.projectName,
         downloadUrl: FIXED_DOWNLOAD_URL,
         deployPath: deployParams.deployPath,
-        deployCommand: deployParams.deployCommand
+        deployCommand: deployParams.deployCommand,
+        startCommand: deployParams.startCommand
       });
 
       console.log();

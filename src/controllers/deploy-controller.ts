@@ -15,12 +15,13 @@ class DeployController {
    *   projectPath: string,
    *   projectName: string,
    *   deployPath: string,
-   *   deployCommand: string
+   *   deployCommand: string,
+   *   startCommand?: string
    * }
    */
   async deployProject(req: Request, res: Response): Promise<void> {
     try {
-      const { projectPath, projectName, deployPath, deployCommand } = req.body;
+      const { projectPath, projectName, deployPath, deployCommand, startCommand } = req.body;
 
       // 参数验证
       if (!projectPath || !projectName || !deployPath) {
@@ -36,7 +37,8 @@ class DeployController {
         projectPath,
         projectName,
         deployPath,
-        deployCommand: deployCommand || 'npm install && npm run build'
+        deployCommand: deployCommand || 'npm install && npm run build',
+        startCommand
       });
 
       if (result.success) {

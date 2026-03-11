@@ -71,7 +71,12 @@
     {
       "identifier": "deployCommand",
       "dataType": { "type": "text", "specs": { "length": "512" } },
-      "name": "部署命令"
+      "name": "部署命令（同步执行，如 npm install && npm run build）"
+    },
+    {
+      "identifier": "startCommand",
+      "dataType": { "type": "text", "specs": { "length": "512" } },
+      "name": "启动命令（后台执行，如 pm2 start）"
     }
   ],
   "outputData": [
@@ -173,14 +178,22 @@ Content-Type: application/json
   "projectPath": "/path/to/your/project",
   "projectName": "my-project",
   "deployPath": "/home/user/projects",
-  "deployCommand": "npm install && npm run build"
+  "deployCommand": "npm install && npm run build",
+  "startCommand": "pm2 start npm --name my-app -- run dev"
 }
 ```
 
 **说明：**
 - `projectPath` 是控制端服务器本地可访问的项目目录路径。
+- `deployCommand` 是部署命令，**同步执行**，用于安装依赖和构建项目。
+- `startCommand` 是启动命令（可选），**后台执行**，用于启动服务。
 - 调用这个接口后，控制端会先在服务内部执行“打包 -> 上传 OSS -> 调用上位机部署服务”。
 - 调用方本身不需要关心 OSS 上传细节，也不需要自己传 `downloadUrl`。
+
+**命令执行顺序：**
+1. 上位机下载并解压项目
+2. 同步执行 `deployCommand`（如果失败会立即报错）
+3. 后台执行 `startCommand`（不阻塞，不检查退出码）
 
 **响应示例（成功）：**
 ```json
@@ -316,7 +329,8 @@ await deployService.deployFullWorkflow({
      projectName,
      downloadUrl,
      deployPath,
-     deployCommand
+     deployCommand,
+     startCommand  // 可选，后台启动命令
    });
    ```
 
@@ -333,7 +347,7 @@ await deployService.deployFullWorkflow({
 ### 上位机流程（伪代码）
 
 ```python
-def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
+def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand, startCommand):
     try:
         # 1. 下载项目
         zip_file = download_from_url(downloadUrl)
@@ -342,20 +356,42 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
         target_path = os.path.join(deployPath, projectName)
         extract_zip(zip_file, target_path)
         
-        # 3. 执行部署命令
+        # 3. 同步执行部署命令（构建）
         os.chdir(target_path)
-        result = subprocess.run(
-            deployCommand,
-            shell=True,
-            capture_output=True,
-            text=True
-        )
+        if deployCommand:
+            log.append("=== run command ===\n")
+            log.append(f"$ {deployCommand}\n")
+            result = subprocess.run(
+                deployCommand,
+                shell=True,
+                capture_output=True,
+                text=True
+            )
+            log.append(result.stdout + result.stderr)
+            log.append("\ncommand done\n")
+            
+            # 如果构建失败，立即返回错误
+            if result.returncode != 0:
+                raise Exception(f"部署命令执行失败: {result.stderr}")
         
-        # 4. 更新部署状态
+        # 4. 后台执行启动命令（不阻塞，不检查退出码）
+        if startCommand:
+            log.append("=== start service ===\n")
+            log.append(f"$ {startCommand}\n")
+            subprocess.Popen(
+                startCommand,
+                shell=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                cwd=target_path
+            )
+            log.append("service started in background\n")
+        
+        # 5. 更新部署状态
         deploy_status = {
-            "success": result.returncode == 0,
-            "message": "部署成功" if result.returncode == 0 else "部署失败",
-            "deployLog": result.stdout + result.stderr,
+            "success": True,
+            "message": "部署成功",
+            "deployLog": log,
             "timestamp": int(time.time() * 1000),
             "projectName": projectName,
             "deployPath": target_path
@@ -363,11 +399,11 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
         
         set_property("deployStatus", json.dumps(deploy_status))
         
-        # 5. 返回结果
+        # 6. 返回结果
         return {
-            "success": deploy_status["success"],
-            "message": deploy_status["message"],
-            "deployLog": deploy_status["deployLog"]
+            "success": True,
+            "message": "部署成功",
+            "deployLog": log
         }
         
     except Exception as e:
@@ -377,6 +413,10 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
             "deployLog": traceback.format_exc()
         }
 ```
+
+**关键点：**
+- `deployCommand` 同步执行，失败会抛异常
+- `startCommand` 后台执行，使用 `Popen`，不阻塞，不检查退出码
 
 ## ⚠️ 注意事项
 
