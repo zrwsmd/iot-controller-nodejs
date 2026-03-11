@@ -22,7 +22,7 @@ async function main() {
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
       deployCommand: 'npm install && npm run build',  // 部署命令（同步执行）
-      startCommand: 'pm2 start npm --name iot-app -- run dev'  // 启动命令（后台执行）
+      startCommand: 'npm run dev'  // 启动命令（后台执行）
     };
 
     console.log('部署参数:');
@@ -37,43 +37,43 @@ async function main() {
     const USE_FIXED_URL = true;
     const FIXED_DOWNLOAD_URL = 'http://iot-deploy-bucket.oss-cn-hangzhou.aliyuncs.com/projects/iot-controller-nodejs/iot-controller-nodejs-1773023709680.zip?OSSAccessKeyId=LTAI5tNzcjJxpnyVfHAmPifK&Expires=1773027311&Signature=QSRT5LwV%2Fw5J%2FiIqrbx59zJjoiI%3D';
 
-    if (USE_FIXED_URL) {
-      // 测试模式：直接使用固定的下载地址，跳过打包和上传
-      console.log('========================================');
-      console.log('  开始部署流程（测试模式）');
-      console.log('========================================\n');
+    // if (USE_FIXED_URL) {
+    //   // 测试模式：直接使用固定的下载地址，跳过打包和上传
+    //   console.log('========================================');
+    //   console.log('  开始部署流程（测试模式）');
+    //   console.log('========================================\n');
 
-      console.log('⚡ 跳过打包和上传，使用固定下载地址');
-      console.log('   下载地址:', FIXED_DOWNLOAD_URL.substring(0, 80) + '...');
-      console.log();
+    //   console.log('⚡ 跳过打包和上传，使用固定下载地址');
+    //   console.log('   下载地址:', FIXED_DOWNLOAD_URL.substring(0, 80) + '...');
+    //   console.log();
 
-      console.log('3️⃣  通知上位机部署...');
-      const result = await deployService.deployProject({
-        projectName: deployParams.projectName,
-        downloadUrl: FIXED_DOWNLOAD_URL,
-        deployPath: deployParams.deployPath,
-        deployCommand: deployParams.deployCommand,
-        startCommand: deployParams.startCommand
-      });
+    //   console.log('3️⃣  通知上位机部署...');
+    //   const result = await deployService.deployProject({
+    //     projectName: deployParams.projectName,
+    //     downloadUrl: FIXED_DOWNLOAD_URL,
+    //     deployPath: deployParams.deployPath,
+    //     deployCommand: deployParams.deployCommand,
+    //     startCommand: deployParams.startCommand
+    //   });
 
-      console.log();
-      console.log('========================================');
-      if (result.success) {
-        console.log('  ✅ 部署成功');
-      } else {
-        console.log('  ❌ 部署失败');
-      }
-      console.log('========================================\n');
-      console.log('消息:', result.message);
+    //   console.log();
+    //   console.log('========================================');
+    //   if (result.success) {
+    //     console.log('  ✅ 部署成功');
+    //   } else {
+    //     console.log('  ❌ 部署失败');
+    //   }
+    //   console.log('========================================\n');
+    //   console.log('消息:', result.message);
       
-      if (result.deployLog) {
-        console.log('\n部署日志:');
-        console.log('----------------------------------------');
-        console.log(result.deployLog);
-        console.log('----------------------------------------');
-      }
-    } 
-    else {
+    //   if (result.deployLog) {
+    //     console.log('\n部署日志:');
+    //     console.log('----------------------------------------');
+    //     console.log(result.deployLog);
+    //     console.log('----------------------------------------');
+    //   }
+    // } 
+    // else {
       // 执行部署
       const result = await deployService.deployFullWorkflow(deployParams);
 
@@ -84,7 +84,7 @@ async function main() {
         console.log('\n❌ 部署失败！');
         process.exit(1);
       }
-    }
+    //}
   } catch (error) {
     console.error('\n❌ 部署过程出错:', error);
     process.exit(1);
