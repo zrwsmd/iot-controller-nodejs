@@ -21,7 +21,7 @@ async function main() {
       projectPath: path.join(__dirname, '..'),  // 当前项目路径
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
-      deployCommand: 'npm install && npm run build && nohup npm run dev > app.log 2>&1 &'  // 部署命令
+      deployCommand: 'npm install && npm run build'  // 部署命令
     };
 
     console.log('部署参数:');
