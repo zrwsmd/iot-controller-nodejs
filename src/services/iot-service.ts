@@ -123,13 +123,18 @@ class IoTService {
       if (!deviceInfo) {
         throw new Error('设备信息为空');
       }
+      
+      // 修正 online 字段：优先使用 status 判断
+      // 阿里云 SDK 的 online 字段可能不准确，status 更可靠
+      const isOnline = deviceInfo.status === 'ONLINE';
+      
       return {
         success: true,
         deviceName: deviceInfo.deviceName ?? '',
         productKey: deviceInfo.productKey ?? '',
         deviceSecret: (deviceInfo.deviceSecret?.substring(0, 8) ?? '') + '****',
         status: deviceInfo.status ?? '',
-        online: deviceInfo.online ?? false,
+        online: isOnline,
         gmtCreate: deviceInfo.gmtCreate ? new Date(deviceInfo.gmtCreate).toLocaleString('zh-CN') : '',
         gmtActive: deviceInfo.gmtActive ? new Date(deviceInfo.gmtActive).toLocaleString('zh-CN') : '',
         gmtOnline: deviceInfo.gmtOnline
