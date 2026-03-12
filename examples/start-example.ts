@@ -19,7 +19,7 @@ async function main() {
     const startParams = {
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
-      startCommand: 'pm2 start npm --name iot-app -- run dev'  // 启动命令
+      startCommand: 'npm run dev'  // 启动命令
     };
 
     console.log('启动参数:');
