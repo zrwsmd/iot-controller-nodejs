@@ -107,7 +107,6 @@ class DeployService {
     downloadUrl: string;
     deployPath: string;
     deployCommand: string;
-    startCommand?: string;
   }): Promise<{
     success: boolean;
     message: string;
@@ -121,8 +120,7 @@ class DeployService {
         projectName: params.projectName,
         downloadUrl: params.downloadUrl,
         deployPath: params.deployPath,
-        deployCommand: params.deployCommand,
-        startCommand: params.startCommand || ''
+        deployCommand: params.deployCommand
       });
 
       // 等待上位机处理
@@ -179,7 +177,6 @@ class DeployService {
     projectName: string;
     deployPath: string;
     deployCommand: string;
-    startCommand?: string;
   }): Promise<{
     success: boolean;
     message: string;
@@ -220,8 +217,7 @@ class DeployService {
         projectName: params.projectName,
         downloadUrl,
         deployPath: params.deployPath,
-        deployCommand: params.deployCommand,
-        startCommand: params.startCommand
+        deployCommand: params.deployCommand
       });
 
       // 4. 清理临时文件

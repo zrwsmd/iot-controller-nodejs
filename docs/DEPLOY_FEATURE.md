@@ -72,11 +72,6 @@
       "identifier": "deployCommand",
       "dataType": { "type": "text", "specs": { "length": "512" } },
       "name": "部署命令（同步执行，如 npm install && npm run build）"
-    },
-    {
-      "identifier": "startCommand",
-      "dataType": { "type": "text", "specs": { "length": "512" } },
-      "name": "启动命令（后台执行，如 pm2 start）"
     }
   ],
   "outputData": [
@@ -99,7 +94,46 @@
 }
 ```
 
-### 2. 属性：deployStatus
+### 2. 服务：startProject
+
+```json
+{
+  "identifier": "startProject",
+  "name": "启动项目",
+  "callType": "async",
+  "inputData": [
+    {
+      "identifier": "projectName",
+      "dataType": { "type": "text", "specs": { "length": "128" } },
+      "name": "项目名称"
+    },
+    {
+      "identifier": "deployPath",
+      "dataType": { "type": "text", "specs": { "length": "256" } },
+      "name": "部署路径"
+    },
+    {
+      "identifier": "startCommand",
+      "dataType": { "type": "text", "specs": { "length": "512" } },
+      "name": "启动命令（后台执行，如 pm2 start）"
+    }
+  ],
+  "outputData": [
+    {
+      "identifier": "success",
+      "dataType": { "type": "bool" },
+      "name": "是否成功"
+    },
+    {
+      "identifier": "message",
+      "dataType": { "type": "text", "specs": { "length": "512" } },
+      "name": "返回消息"
+    }
+  ]
+}
+```
+
+### 3. 属性：deployStatus
 
 ```json
 {
@@ -178,22 +212,15 @@ Content-Type: application/json
   "projectPath": "/path/to/your/project",
   "projectName": "my-project",
   "deployPath": "/home/user/projects",
-  "deployCommand": "npm install && npm run build",
-  "startCommand": "pm2 start npm --name my-app -- run dev"
+  "deployCommand": "npm install && npm run build"
 }
 ```
 
 **说明：**
 - `projectPath` 是控制端服务器本地可访问的项目目录路径。
 - `deployCommand` 是部署命令，**同步执行**，用于安装依赖和构建项目。
-- `startCommand` 是启动命令（可选），**后台执行**，用于启动服务。
 - 调用这个接口后，控制端会先在服务内部执行“打包 -> 上传 OSS -> 调用上位机部署服务”。
 - 调用方本身不需要关心 OSS 上传细节，也不需要自己传 `downloadUrl`。
-
-**命令执行顺序：**
-1. 上位机下载并解压项目
-2. 同步执行 `deployCommand`（如果失败会立即报错）
-3. 后台执行 `startCommand`（不阻塞，不检查退出码）
 
 **响应示例（成功）：**
 ```json
@@ -213,7 +240,42 @@ Content-Type: application/json
 }
 ```
 
-### 2. 查询部署状态
+### 2. 启动项目
+
+**请求：**
+```http
+POST /api/start/project
+Content-Type: application/json
+
+{
+  "projectName": "my-project",
+  "deployPath": "/home/user/projects",
+  "startCommand": "pm2 start npm --name my-app -- run dev"
+}
+```
+
+**说明：**
+- `projectName` 是项目名称。
+- `deployPath` 是项目部署路径。
+- `startCommand` 是启动命令，**后台执行**，不阻塞。
+
+**响应示例（成功）：**
+```json
+{
+  "success": true,
+  "message": "启动成功"
+}
+```
+
+**响应示例（失败）：**
+```json
+{
+  "success": false,
+  "message": "启动失败"
+}
+```
+
+### 3. 查询部署状态
 
 **请求：**
 ```http
@@ -329,8 +391,7 @@ await deployService.deployFullWorkflow({
      projectName,
      downloadUrl,
      deployPath,
-     deployCommand,
-     startCommand  // 可选，后台启动命令
+     deployCommand
    });
    ```
 
@@ -346,8 +407,10 @@ await deployService.deployFullWorkflow({
 
 ### 上位机流程（伪代码）
 
+#### deployProject 服务
+
 ```python
-def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand, startCommand):
+def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
     try:
         # 1. 下载项目
         zip_file = download_from_url(downloadUrl)
@@ -374,20 +437,7 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand, st
             if result.returncode != 0:
                 raise Exception(f"部署命令执行失败: {result.stderr}")
         
-        # 4. 后台执行启动命令（不阻塞，不检查退出码）
-        if startCommand:
-            log.append("=== start service ===\n")
-            log.append(f"$ {startCommand}\n")
-            subprocess.Popen(
-                startCommand,
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                cwd=target_path
-            )
-            log.append("service started in background\n")
-        
-        # 5. 更新部署状态
+        # 4. 更新部署状态
         deploy_status = {
             "success": True,
             "message": "部署成功",
@@ -399,7 +449,7 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand, st
         
         set_property("deployStatus", json.dumps(deploy_status))
         
-        # 6. 返回结果
+        # 5. 返回结果
         return {
             "success": True,
             "message": "部署成功",
@@ -414,9 +464,42 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand, st
         }
 ```
 
+#### startProject 服务
+
+```python
+def handle_startProject(projectName, deployPath, startCommand):
+    try:
+        # 1. 构建项目路径
+        target_path = os.path.join(deployPath, projectName)
+        
+        # 2. 后台执行启动命令
+        log.append("=== start service ===\n")
+        log.append(f"$ {startCommand}\n")
+        subprocess.Popen(
+            startCommand,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            cwd=target_path
+        )
+        log.append("service started in background\n")
+        
+        # 3. 返回结果
+        return {
+            "success": True,
+            "message": "启动成功"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"启动失败: {str(e)}"
+        }
+```
+
 **关键点：**
-- `deployCommand` 同步执行，失败会抛异常
-- `startCommand` 后台执行，使用 `Popen`，不阻塞，不检查退出码
+- `deployProject` 只负责部署，不启动服务
+- `startProject` 专门负责启动，后台执行，不阻塞
 
 ## ⚠️ 注意事项
 

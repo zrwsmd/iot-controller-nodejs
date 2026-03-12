@@ -15,6 +15,7 @@
     "test:connection": "ts-node tests/test-connection.ts",
     "example:client": "ts-node examples/ide-client-example.ts",
     "example:deploy": "ts-node examples/deploy-example.ts",
+    "example:start": "ts-node examples/start-example.ts",
     "clean": "rimraf dist"
   },
   "keywords": [
