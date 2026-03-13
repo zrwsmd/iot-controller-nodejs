@@ -4,6 +4,9 @@ import path from 'path';
 
 dotenv.config();
 
+// 客户端ID（需要与连接时使用的ID一致）
+const CLIENT_ID = 'ide-client-12345678';
+
 /**
  * 部署示例
  * 演示如何将项目部署到上位机
@@ -18,6 +21,7 @@ async function main() {
   try {
     // 部署参数
     const deployParams = {
+      clientId: CLIENT_ID,                      // 客户端ID（必须与连接时的ID一致）
       projectPath: path.join(__dirname, '..'),  // 当前项目路径
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
@@ -25,6 +29,7 @@ async function main() {
     };
 
     console.log('部署参数:');
+    console.log('  客户端ID:', deployParams.clientId);
     console.log('  项目路径:', deployParams.projectPath);
     console.log('  项目名称:', deployParams.projectName);
     console.log('  部署路径:', deployParams.deployPath);

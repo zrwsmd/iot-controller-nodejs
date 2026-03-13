@@ -54,6 +54,11 @@
   "callType": "async",
   "inputData": [
     {
+      "identifier": "clientId",
+      "dataType": { "type": "text", "specs": { "length": "128" } },
+      "name": "客户端ID（用于验证调用方身份）"
+    },
+    {
       "identifier": "projectName",
       "dataType": { "type": "text", "specs": { "length": "128" } },
       "name": "项目名称"
@@ -102,6 +107,11 @@
   "name": "启动项目",
   "callType": "async",
   "inputData": [
+    {
+      "identifier": "clientId",
+      "dataType": { "type": "text", "specs": { "length": "128" } },
+      "name": "客户端ID（用于验证调用方身份）"
+    },
     {
       "identifier": "projectName",
       "dataType": { "type": "text", "specs": { "length": "128" } },
@@ -209,6 +219,7 @@ POST /api/deploy/project
 Content-Type: application/json
 
 {
+  "clientId": "ide-client-12345678",
   "projectPath": "/path/to/your/project",
   "projectName": "my-project",
   "deployPath": "/home/user/projects",
@@ -217,8 +228,10 @@ Content-Type: application/json
 ```
 
 **说明：**
+- `clientId` 是客户端ID，**必须与连接时使用的ID一致**，用于验证调用方身份。
 - `projectPath` 是控制端服务器本地可访问的项目目录路径。
 - `deployCommand` 是部署命令，**同步执行**，用于安装依赖和构建项目。
+- 调用这个接口前，**必须先调用 `/api/connection/connect` 建立连接**。
 - 调用这个接口后，控制端会先在服务内部执行“打包 -> 上传 OSS -> 调用上位机部署服务”。
 - 调用方本身不需要关心 OSS 上传细节，也不需要自己传 `downloadUrl`。
 
@@ -248,6 +261,7 @@ POST /api/start/project
 Content-Type: application/json
 
 {
+  "clientId": "ide-client-12345678",
   "projectName": "my-project",
   "deployPath": "/home/user/projects",
   "startCommand": "pm2 start npm --name my-app -- run dev"
@@ -255,9 +269,11 @@ Content-Type: application/json
 ```
 
 **说明：**
+- `clientId` 是客户端ID，**必须与连接时使用的ID一致**，用于验证调用方身份。
 - `projectName` 是项目名称。
 - `deployPath` 是项目部署路径。
 - `startCommand` 是启动命令，**后台执行**，不阻塞。
+- 调用这个接口前，**必须先调用 `/api/connection/connect` 建立连接**。
 
 **响应示例（成功）：**
 ```json
@@ -410,16 +426,24 @@ await deployService.deployFullWorkflow({
 #### deployProject 服务
 
 ```python
-def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
+def handle_deployProject(clientId, projectName, downloadUrl, deployPath, deployCommand):
     try:
-        # 1. 下载项目
+        # 1. 验证客户端ID
+        current_client_id = get_property("IDEInfo").get("clientId")
+        if current_client_id != clientId:
+            return {
+                "success": False,
+                "message": f"客户端ID不匹配，当前连接: {current_client_id}，请求: {clientId}"
+            }
+        
+        # 2. 下载项目
         zip_file = download_from_url(downloadUrl)
         
-        # 2. 解压到目标路径
+        # 3. 解压到目标路径
         target_path = os.path.join(deployPath, projectName)
         extract_zip(zip_file, target_path)
         
-        # 3. 同步执行部署命令（构建）
+        # 4. 同步执行部署命令（构建）
         os.chdir(target_path)
         if deployCommand:
             log.append("=== run command ===\n")
@@ -437,7 +461,7 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
             if result.returncode != 0:
                 raise Exception(f"部署命令执行失败: {result.stderr}")
         
-        # 4. 更新部署状态
+        # 5. 更新部署状态
         deploy_status = {
             "success": True,
             "message": "部署成功",
@@ -449,7 +473,7 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
         
         set_property("deployStatus", json.dumps(deploy_status))
         
-        # 5. 返回结果
+        # 6. 返回结果
         return {
             "success": True,
             "message": "部署成功",
@@ -467,12 +491,20 @@ def handle_deployProject(projectName, downloadUrl, deployPath, deployCommand):
 #### startProject 服务
 
 ```python
-def handle_startProject(projectName, deployPath, startCommand):
+def handle_startProject(clientId, projectName, deployPath, startCommand):
     try:
-        # 1. 构建项目路径
+        # 1. 验证客户端ID
+        current_client_id = get_property("IDEInfo").get("clientId")
+        if current_client_id != clientId:
+            return {
+                "success": False,
+                "message": f"客户端ID不匹配，当前连接: {current_client_id}，请求: {clientId}"
+            }
+        
+        # 2. 构建项目路径
         target_path = os.path.join(deployPath, projectName)
         
-        # 2. 后台执行启动命令
+        # 3. 后台执行启动命令
         log.append("=== start service ===\n")
         log.append(f"$ {startCommand}\n")
         subprocess.Popen(
@@ -484,7 +516,7 @@ def handle_startProject(projectName, deployPath, startCommand):
         )
         log.append("service started in background\n")
         
-        # 3. 返回结果
+        # 4. 返回结果
         return {
             "success": True,
             "message": "启动成功"

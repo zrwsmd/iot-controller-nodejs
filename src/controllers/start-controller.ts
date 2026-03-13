@@ -12,6 +12,7 @@ class StartController {
    * 启动项目
    * POST /api/start/project
    * Body: {
+   *   clientId: string,
    *   projectName: string,
    *   deployPath: string,
    *   startCommand: string
@@ -19,19 +20,20 @@ class StartController {
    */
   async startProject(req: Request, res: Response): Promise<void> {
     try {
-      const { projectName, deployPath, startCommand } = req.body;
+      const { clientId, projectName, deployPath, startCommand } = req.body;
 
       // 参数验证
-      if (!projectName || !deployPath || !startCommand) {
+      if (!clientId || !projectName || !deployPath || !startCommand) {
         res.status(400).json({
           success: false,
-          message: '缺少必填参数: projectName, deployPath, startCommand'
+          message: '缺少必填参数: clientId, projectName, deployPath, startCommand'
         });
         return;
       }
 
       // 执行启动
       const result = await this.startService.startProject({
+        clientId,
         projectName,
         deployPath,
         startCommand

@@ -1,4 +1,5 @@
 import IoTService from './iot-service';
+import ConnectionService from './connection-service';
 import * as fs from 'fs';
 import * as path from 'path';
 import archiver from 'archiver';
@@ -12,10 +13,12 @@ type OSSClientInstance = InstanceType<typeof OSS>;
 
 class DeployService {
   private iotService: IoTService;
+  private connectionService: ConnectionService;
   private ossClient?: OSSClientInstance;
 
   constructor() {
     this.iotService = new IoTService();
+    this.connectionService = new ConnectionService();
   }
 
   /**
@@ -103,6 +106,7 @@ class DeployService {
    * 通知上位机部署项目
    */
   async deployProject(params: {
+    clientId: string;
     projectName: string;
     downloadUrl: string;
     deployPath: string;
@@ -113,10 +117,28 @@ class DeployService {
     deployLog?: string;
   }> {
     try {
-      console.log('[DeployService] 通知上位机部署项目:', params.projectName);
+      console.log('[DeployService] 检查连接状态...');
+      const status = await this.connectionService.checkConnectionStatus();
+      
+      if (!status.connected) {
+        return {
+          success: false,
+          message: '未连接到上位机，请先建立连接'
+        };
+      }
+      
+      if (status.ideInfo?.clientId !== params.clientId) {
+        return {
+          success: false,
+          message: `当前连接的客户端ID (${status.ideInfo?.clientId}) 与请求的客户端ID (${params.clientId}) 不匹配`
+        };
+      }
+      
+      console.log('[DeployService] 连接验证通过，通知上位机部署项目:', params.projectName);
 
       // 调用上位机的 deployProject 服务
       await this.iotService.invokeService('deployProject', {
+        clientId: params.clientId,
         projectName: params.projectName,
         downloadUrl: params.downloadUrl,
         deployPath: params.deployPath,
@@ -127,12 +149,12 @@ class DeployService {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // 查询部署状态
-      const status = await this.checkDeployStatus();
+      const deployStatus = await this.checkDeployStatus();
 
       return {
-        success: status.success || false,
-        message: status.message || '部署中...',
-        deployLog: status.deployLog
+        success: deployStatus.success || false,
+        message: deployStatus.message || '部署中...',
+        deployLog: deployStatus.deployLog
       };
     } catch (error) {
       const err = error as Error;
@@ -173,6 +195,7 @@ class DeployService {
    * 完整部署流程
    */
   async deployFullWorkflow(params: {
+    clientId: string;
     projectPath: string;
     projectName: string;
     deployPath: string;
@@ -214,6 +237,7 @@ class DeployService {
       // 3. 通知上位机部署
       console.log('3️⃣  通知上位机部署...');
       const deployResult = await this.deployProject({
+        clientId: params.clientId,
         projectName: params.projectName,
         downloadUrl,
         deployPath: params.deployPath,

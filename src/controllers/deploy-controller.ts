@@ -12,6 +12,7 @@ class DeployController {
    * 部署项目
    * POST /api/deploy/project
    * Body: {
+   *   clientId: string,
    *   projectPath: string,
    *   projectName: string,
    *   deployPath: string,
@@ -20,19 +21,20 @@ class DeployController {
    */
   async deployProject(req: Request, res: Response): Promise<void> {
     try {
-      const { projectPath, projectName, deployPath, deployCommand } = req.body;
+      const { clientId, projectPath, projectName, deployPath, deployCommand } = req.body;
 
       // 参数验证
-      if (!projectPath || !projectName || !deployPath) {
+      if (!clientId || !projectPath || !projectName || !deployPath) {
         res.status(400).json({
           success: false,
-          message: '缺少必填参数: projectPath, projectName, deployPath'
+          message: '缺少必填参数: clientId, projectPath, projectName, deployPath'
         });
         return;
       }
 
       // 执行部署
       const result = await this.deployService.deployFullWorkflow({
+        clientId,
         projectPath,
         projectName,
         deployPath,

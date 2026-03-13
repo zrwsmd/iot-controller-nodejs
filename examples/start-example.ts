@@ -3,6 +3,9 @@ import StartService from '../src/services/start-service';
 
 dotenv.config();
 
+// 客户端ID（需要与连接时使用的ID一致）
+const CLIENT_ID = 'ide-client-12345678';
+
 /**
  * 启动项目示例
  * 演示如何启动已部署的项目
@@ -17,12 +20,14 @@ async function main() {
   try {
     // 启动参数
     const startParams = {
+      clientId: CLIENT_ID,                      // 客户端ID（必须与连接时的ID一致）
       projectName: 'iot-controller-nodejs',     // 项目名称
       deployPath: '/home/user/projects',        // 上位机部署路径
       startCommand: 'npm run dev'  // 启动命令
     };
 
     console.log('启动参数:');
+    console.log('  客户端ID:', startParams.clientId);
     console.log('  项目名称:', startParams.projectName);
     console.log('  部署路径:', startParams.deployPath);
     console.log('  启动命令:', startParams.startCommand);
