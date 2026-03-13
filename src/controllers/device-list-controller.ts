@@ -21,6 +21,7 @@ class DeviceListController {
       
       res.json({
         success: true,
+        message: '查询设备列表成功',
         data: {
           devices,
           total: devices.length
