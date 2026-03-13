@@ -9,16 +9,28 @@ class ConnectionService {
   }
 
   /**
-   * 检查当前连接状态（通过查询属性）
+   * 检查当前连接状态（通过查询属性和设备在线状态）
    */
   async checkConnectionStatus(): Promise<ConnectionStatus> {
     try {
+      // 1. 先检查设备是否在线（从阿里云平台获取）
+      const deviceStatus = await this.iotService.getDeviceStatus();
+      console.log('[ConnectionService] 设备在线状态:', deviceStatus.online);
+      
+      // 如果设备离线，直接返回未连接
+      if (!deviceStatus.online) {
+        console.log('[ConnectionService] 设备离线，连接无效');
+        return { connected: false };
+      }
+      
+      // 2. 设备在线，再检查 IDE 连接状态
       const result = await this.iotService.queryProperty();
       const connectedValue = result.properties.hasIDEConnected?.value;
       console.log('[ConnectionService] hasIDEConnected 原始值:', connectedValue, '类型:', typeof connectedValue);
-      const connected = String(connectedValue) === 'true' || connectedValue === 1 || String(connectedValue) === '1';
+      const hasIDEConnected = String(connectedValue) === 'true' || connectedValue === 1 || String(connectedValue) === '1';
       
-      if (connected && result.properties.IDEInfo) {
+      // 3. 只有设备在线且 hasIDEConnected 为 true 时才认为连接有效
+      if (hasIDEConnected && result.properties.IDEInfo) {
         const ideInfoData = result.properties.IDEInfo.value;
         let ideInfo: IDEInfo | undefined;
         
@@ -41,9 +53,11 @@ class ConnectionService {
           lastHeartbeat = heartbeatData;
         }
 
+        console.log('[ConnectionService] 设备在线且已连接IDE:', ideInfo?.clientId);
         return { connected: true, ideInfo, lastHeartbeat };
       }
 
+      console.log('[ConnectionService] 设备在线但未连接IDE');
       return { connected: false };
     } catch (error) {
       console.error('[ConnectionService] 检查连接状态失败:', error);
