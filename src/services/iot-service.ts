@@ -190,17 +190,50 @@ class IoTService {
       const response = await this.client.queryDevice(request);
       const deviceList = response.body.data?.deviceInfo || [];
       
-      const devices: DeviceInfo[] = deviceList.map((device: any) => ({
-        deviceName: device.deviceName || '',
-        productKey: device.productKey || '',
-        status: device.status || '',
-        online: device.status === 'ONLINE',
-        gmtCreate: device.gmtCreate ? new Date(device.gmtCreate).toLocaleString('zh-CN') : '',
-        gmtActive: device.gmtActive ? new Date(device.gmtActive).toLocaleString('zh-CN') : '',
-        gmtOnline: device.gmtOnline ? new Date(device.gmtOnline).toLocaleString('zh-CN') : 'N/A',
-        ipAddress: device.ipAddress || 'N/A',
-        nickname: device.nickname || device.deviceName
-      }));
+      const devices: DeviceInfo[] = await Promise.all(
+        deviceList.map(async (device: any) => {
+          const deviceName = device.deviceName || '';
+          const deviceProductKey = device.productKey || targetProductKey;
+          let status = device.status || '';
+          let gmtCreate = device.gmtCreate ? new Date(device.gmtCreate).toLocaleString('zh-CN') : '';
+          let gmtActive = device.gmtActive ? new Date(device.gmtActive).toLocaleString('zh-CN') : '';
+          let gmtOnline = device.gmtOnline ? new Date(device.gmtOnline).toLocaleString('zh-CN') : 'N/A';
+          let ipAddress = device.ipAddress || 'N/A';
+
+          try {
+            const detailRequest = new QueryDeviceDetailRequest({
+              iotInstanceId: this.iotInstanceId,
+              productKey: deviceProductKey,
+              deviceName
+            });
+            const detailResponse = await this.client.queryDeviceDetail(detailRequest);
+            const detail = detailResponse.body.data;
+            console.log(`[IoTService] 设备详情 ${deviceName}: status=${detail?.status}, online=${detail?.status === 'ONLINE'}`);
+            if (detail) {
+              status = detail.status || status;
+              gmtCreate = detail.gmtCreate ? new Date(detail.gmtCreate).toLocaleString('zh-CN') : gmtCreate;
+              gmtActive = detail.gmtActive ? new Date(detail.gmtActive).toLocaleString('zh-CN') : gmtActive;
+              gmtOnline = detail.gmtOnline ? new Date(detail.gmtOnline).toLocaleString('zh-CN') : gmtOnline;
+              ipAddress = detail.ipAddress || ipAddress;
+            }
+          } catch (error) {
+            const err = error as Error;
+            console.warn(`[IoTService] 查询设备详情失败(${deviceProductKey}/${deviceName}): ${err.message}`);
+          }
+
+          return {
+            deviceName,
+            productKey: deviceProductKey,
+            status,
+            online: status === 'ONLINE',
+            gmtCreate,
+            gmtActive,
+            gmtOnline,
+            ipAddress,
+            nickname: device.nickname || deviceName
+          };
+        })
+      );
       
       console.log(`[IoTService] 查询到 ${devices.length} 个设备`);
       return devices;
