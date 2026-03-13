@@ -46,3 +46,21 @@ export interface DeviceStatusResult {
   lastOnlineTime: string;
   ipAddress: string;
 }
+
+export interface DeviceInfo {
+  deviceName: string;
+  productKey: string;
+  status: string;
+  online: boolean;
+  gmtCreate: string;
+  gmtActive: string;
+  gmtOnline: string;
+  ipAddress: string;
+  nickname?: string;
+}
+
+export interface DeviceListResult {
+  success: boolean;
+  devices: DeviceInfo[];
+  total: number;
+}

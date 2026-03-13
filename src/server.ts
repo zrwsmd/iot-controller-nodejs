@@ -6,6 +6,7 @@ import deviceRoutes from './routes/device-routes';
 import connectionRoutes from './routes/connection-routes';
 import deployRoutes from './routes/deploy-routes';
 import startRoutes from './routes/start-routes';
+import deviceListRoutes from './routes/device-list-routes';
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ app.get('/', (_req: Request, res: Response) => {
         queryDetail:    'GET  /api/device/detail',
         getStatus:      'GET  /api/device/status'
       },
+      devices: {
+        list:            'GET  /api/devices/list'
+      },
       connection: {
         status:          'GET  /api/connection/status',
         connect:         'POST /api/connection/connect',
@@ -58,6 +62,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/device', deviceRoutes);
+app.use('/api/devices', deviceListRoutes);
 app.use('/api/connection', connectionRoutes);
 app.use('/api/deploy', deployRoutes);
 app.use('/api/start', startRoutes);

@@ -16,6 +16,7 @@
     "example:client": "ts-node examples/ide-client-example.ts",
     "example:deploy": "ts-node examples/deploy-example.ts",
     "example:start": "ts-node examples/start-example.ts",
+    "example:devices": "ts-node examples/device-list-example.ts",
     "clean": "rimraf dist"
   },
   "keywords": [

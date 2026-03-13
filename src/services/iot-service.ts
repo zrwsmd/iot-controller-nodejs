@@ -3,7 +3,8 @@ import {
   SetDevicePropertyRequest,
   QueryDevicePropertyStatusRequest,
   InvokeThingServiceRequest,
-  QueryDeviceDetailRequest
+  QueryDeviceDetailRequest,
+  QueryDeviceRequest
 } from '@alicloud/iot20180120';
 import * as OpenApi from '@alicloud/openapi-client';
 import config from '../config/iot-config';
@@ -13,7 +14,8 @@ import {
   InvokeServiceResult,
   DeviceDetailResult,
   DeviceStatusResult,
-  PropertyMap
+  PropertyMap,
+  DeviceInfo
 } from '../types/iot.types';
 
 class IoTService {
@@ -151,11 +153,9 @@ class IoTService {
 
   async getDeviceStatus(): Promise<DeviceStatusResult> {
     try {
-      console.log('[IoTService] 获取设备状态');
-      const [detail, property] = await Promise.all([
-        this.queryDeviceDetail(),
-        this.queryProperty()
-      ]);
+      const detail = await this.queryDeviceDetail();
+      const property = await this.queryProperty();
+      
       return {
         success: true,
         online: detail.online,
@@ -167,6 +167,46 @@ class IoTService {
     } catch (error) {
       const err = error as Error;
       console.error('[IoTService] 获取设备状态失败:', err.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 查询设备列表
+   * @param productKey 可选，指定产品Key则只查询该产品下的设备，不指定则使用配置的默认产品
+   */
+  async queryDeviceList(productKey?: string): Promise<DeviceInfo[]> {
+    try {
+      const targetProductKey = productKey || this.productKey;
+      console.log(`[IoTService] 查询设备列表, ProductKey: ${targetProductKey}`);
+      
+      const request = new QueryDeviceRequest({
+        iotInstanceId: this.iotInstanceId,
+        productKey: targetProductKey,
+        pageSize: 50,
+        currentPage: 1
+      });
+      
+      const response = await this.client.queryDevice(request);
+      const deviceList = response.body.data?.deviceInfo || [];
+      
+      const devices: DeviceInfo[] = deviceList.map((device: any) => ({
+        deviceName: device.deviceName || '',
+        productKey: device.productKey || '',
+        status: device.status || '',
+        online: device.status === 'ONLINE',
+        gmtCreate: device.gmtCreate ? new Date(device.gmtCreate).toLocaleString('zh-CN') : '',
+        gmtActive: device.gmtActive ? new Date(device.gmtActive).toLocaleString('zh-CN') : '',
+        gmtOnline: device.gmtOnline ? new Date(device.gmtOnline).toLocaleString('zh-CN') : 'N/A',
+        ipAddress: device.ipAddress || 'N/A',
+        nickname: device.nickname || device.deviceName
+      }));
+      
+      console.log(`[IoTService] 查询到 ${devices.length} 个设备`);
+      return devices;
+    } catch (error) {
+      const err = error as Error;
+      console.error('[IoTService] 查询设备列表失败:', err.message);
       throw error;
     }
   }
