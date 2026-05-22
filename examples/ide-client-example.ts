@@ -4,8 +4,26 @@ import axios from 'axios';
 dotenv.config();
 
 const BASE_URL = 'http://localhost:3000';
-const CLIENT_ID = `ide-client-12345678`;
+const DEFAULT_CLIENT_ID = 'ide-client-12345678';
+const CLIENT_ID = resolveClientId();
 const HEARTBEAT_INTERVAL = 30000; // 30 秒
+
+function resolveClientId(): string {
+  const namedArg = process.argv.find(arg => arg.startsWith('--clientId='));
+  if (namedArg) {
+    const value = namedArg.slice('--clientId='.length).trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  const positionalArg = process.argv[2];
+  if (positionalArg && !positionalArg.startsWith('--')) {
+    return positionalArg;
+  }
+
+  return process.env.IDE_CLIENT_ID || DEFAULT_CLIENT_ID;
+}
 
 /**
  * IDE 客户端示例
